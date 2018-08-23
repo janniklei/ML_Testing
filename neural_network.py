@@ -4,35 +4,19 @@ from tensorflow.examples.tutorials.mnist import input_data
 
 mnist = input_data.read_data_sets('/tmp/data/', one_hot=True)
 
-# Layer Anzahl
-layers = [
-    ['inputlayer', 784],
-    ['hidden1', 500],
-    ['hidden2', 500],
-    ['outputlayer', 100]
-]
-
-model_input_nodes = layers[0][1]
-model_classes = 10
-model_batch_size = 150
-
-X = tf.placeholder('float', [None, 784])
-y = tf.placeholder('float')
-
 # Neural Net
-
 def nn_model(X, classes, layers):
     maxlayers = len(layers)-1
     for l in range(0,maxlayers+1):
         m = l+1
         if l != maxlayers:
             vars()[layers[l][0]] ={
-                'weights': tf.Variable(tf.truncated_normal([layers[l][1], layers[m][1]], stddev=0.1)),
+                'weights': tf.Variable(tf.truncated_normal([layers[l][1], layers[m][1]], stddev=layers[l][2])),
                 'biases': tf.Variable(tf.truncated_normal([layers[m][1]]))
                 }
         else:
             vars()[layers[l][0]] ={
-                'weights': tf.Variable(tf.truncated_normal([layers[l][1], classes], stddev=0.1)),
+                'weights': tf.Variable(tf.truncated_normal([layers[l][1], classes], stddev=layers[l][2])),
                 'biases': tf.Variable(tf.truncated_normal([classes]))
                 }
 
@@ -64,28 +48,34 @@ def nn_train(X, classes, layers, epochs=1, batch_size=100):
                 _, c = sess.run([optimizer, cost], feed_dict={X: epoch_x, y: epoch_y})
                 epoch_loss += c
 
-            print('Epoch ', epoch, ' of ', epochs, ' with loss: ', epoch_loss)
+            print('Epoch ', epoch+1, ' of ', epochs, ' with loss: ', epoch_loss)
 
         correct_result = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
 
         accuracy = tf.reduce_mean(tf.cast(correct_result, 'float'))
         print('Acc: ', accuracy.eval({X: mnist.test.images, y: mnist.test.labels}))
 
-# Test Model
+
+# Test Model Parameter
+# Layer Anzahl
+layers = [
+    ['inputlayer', 784, 0.1],
+    ['hidden1', 500, 0.1],
+    ['hidden2', 500, 0.1],
+    ['outputlayer', 100, 0.1]
+]
+
+# classes und batch size
+model_classes = 10
+model_batch_size = 150
+
+# Epochen
 epochs_list = [5, 10, 20, 30]
 
+# Init X & y
+X = tf.placeholder('float', [None, layers[0][1]])
+y = tf.placeholder('float')
+
+# train und score modell 
 for epochs in epochs_list:
     nn_train(X, model_classes, layers, epochs, model_batch_size)
-
-
-
-# Bestes Ergebis Acc ca. 98,2 %
-# 3 Layer, 10 epochs und Batch Size 150
-layers = [
-    ['inputlayer', 784],
-    ['hidden1', 500],
-    ['hidden2', 500],
-    ['outputlayer', 100]
-]
-print('best model:')
-nn_train(X, 10, layers, 10, 150)
